@@ -37,7 +37,6 @@ defmodule Config do
     end
   end
 
-
   @doc """
   Fetches value with a provided default value
 
@@ -51,7 +50,6 @@ defmodule Config do
       {:error, _}  -> {:ok, default_value}
     end
   end
-
 
   @doc """
   Fetches a value or raises an exception if it is not provided.
@@ -67,7 +65,6 @@ defmodule Config do
         raise "Configuration for application #{app} for #{key} is missing"
     end
   end
-
 
   @doc """
   Fetches a value or raises an exception if it is not provided.
@@ -118,7 +115,6 @@ defmodule Config do
     end
   end
 
-
   @doc """
   Fetches an integer with a default value
 
@@ -132,7 +128,6 @@ defmodule Config do
       {:error, _}  -> {:ok, default_value}
     end
   end
-
 
   @doc """
   Fetches an integer or raises an exception
@@ -165,4 +160,85 @@ defmodule Config do
     end
   end
 
+
+  @doc """
+  Fetches a boolean value from the environment
+
+  ## When the value is an integer
+    iex> Application.put_env(:my_app, :foo, true)
+    iex> Config.get_boolean(:my_app, :foo)
+    {:ok, true}
+
+  ## When the value is an string that can be converted to a boolean
+    iex> Application.put_env(:my_app, :foo, "true")
+    iex> Config.get_boolean(:my_app, :foo)
+    {:ok, true}
+
+  ## When the value is not an integer and can't be converted
+    iex> Application.put_env(:my_app, :foo, "23")
+    iex> Config.get_boolean(:my_app, :non_existing_foo)
+    {:error, nil}
+  """
+  @spec get_boolean(atom, atom) :: term
+  def get_boolean(app, key) do
+    case get(app, key) do
+      {:ok, value} ->
+        if is_boolean(value) do
+          {:ok, value}
+        else
+          case value do
+            "true"  -> {:ok, true}
+            "false" -> {:ok, false}
+            _       -> {:error, nil}
+          end
+        end
+      {:error, nil}  ->
+        {:error, nil}
+    end
+  end
+
+  @doc """
+  Fetches a boolean with a default value
+
+    iex> Config.get_boolean(:my_app, :non_existing_foo, default: true)
+    {:ok, true}
+  """
+  @spec get_boolean(atom, atom, default: term) :: term
+  def get_boolean(app, key, default: default_value) do
+    case get_boolean(app, key) do
+      {:ok, value} -> {:ok, value}
+      {:error, _}  -> {:ok, default_value}
+    end
+  end
+
+  @doc """
+  Fetches a boolean or raises an exception
+
+    iex> Application.put_env(:my_app, :foo, true)
+    iex> Config.get_boolean!(:my_app, :foo)
+    true
+  """
+  @spec get_boolean!(atom, atom) :: term
+  def get_boolean!(app, key) do
+    case get_boolean(app, key) do
+      {:ok, value} -> value
+      {:error, _}  ->
+        raise "Configuration for application #{app} for #{key} is missing or it is not a boolean"
+    end
+  end
+
+  @doc """
+  Fetches a boolean or returns the default value
+
+    iex> Application.put_env(:my_app, :foo, "true")
+    iex> Config.get_boolean!(:my_app, :foo)
+    true
+  """
+  @spec get_boolean!(atom, atom) :: term
+  def get_boolean!(app, key, default: default_value) do
+    case get_boolean!(app, key) do
+      {:ok, value} -> value
+      {:error, _}  -> default_value
+    end
+  end
 end
