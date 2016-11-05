@@ -51,4 +51,34 @@ defmodule Config do
       {:error, _}  -> {:ok, default_value}
     end
   end
+
+
+  @doc """
+  Fetches a value or raises an exception if it is not provided.
+
+    iex> Application.put_env(:my_app, :foo, "bar")
+    iex> Config.get!(:my_app, :foo)
+    "bar"
+  """
+  def get!(app, key) do
+    case get(app, key) do
+      {:ok, value} -> value
+      {:error, _}  ->
+        raise "Configuration for application #{app} for #{key} is not missing"
+    end
+  end
+
+
+  @doc """
+  Fetches a value or raises an exception if it is not provided.
+
+    iex> Config.get!(:my_app, :foo, default: "bar")
+    "bar"
+  """
+  def get!(app, key, default: default_value) do
+    case get(app, key) do
+      {:ok, value} -> value
+      {:error, _}  -> default_value
+    end
+  end
 end
