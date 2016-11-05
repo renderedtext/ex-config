@@ -64,7 +64,7 @@ defmodule Config do
     case get(app, key) do
       {:ok, value} -> value
       {:error, _}  ->
-        raise "Configuration for application #{app} for #{key} is not missing"
+        raise "Configuration for application #{app} for #{key} is missing"
     end
   end
 
@@ -72,7 +72,7 @@ defmodule Config do
   @doc """
   Fetches a value or raises an exception if it is not provided.
 
-    iex> Config.get!(:my_app, :foo, default: "bar")
+    iex> Config.get!(:my_app, :non_existing_foo, default: "bar")
     "bar"
   """
   def get!(app, key, default: default_value) do
@@ -81,4 +81,88 @@ defmodule Config do
       {:error, _}  -> default_value
     end
   end
+
+
+  @doc """
+  Fetches an integer value from the environment
+
+  ## When the value is an integer
+    iex> Application.put_env(:my_app, :foo, 23)
+    iex> Config.get_integer(:my_app, :foo)
+    {:ok, 23}
+
+  ## When the value is an string that can be converted to an integer
+    iex> Application.put_env(:my_app, :foo, "23")
+    iex> Config.get_integer(:my_app, :foo)
+    {:ok, 23}
+
+  ## When the value is not an integer and can't be converted
+    iex> Application.put_env(:my_app, :foo, "not_a_number")
+    iex> Config.get_integer(:my_app, :non_existing_foo)
+    {:error, nil}
+  """
+  @spec get_integer(atom, atom) :: term
+  def get_integer(app, key) do
+    case get(app, key) do
+      {:ok, value} ->
+        if is_integer(value) do
+          {:ok, value}
+        else
+          case Integer.parse(value) do
+            {number, _} -> {:ok, number}
+            :error      -> {:error, nil}
+          end
+        end
+      {:error, nil}  ->
+        {:error, nil}
+    end
+  end
+
+
+  @doc """
+  Fetches an integer with a default value
+
+    iex> Config.get_integer(:my_app, :non_existing_foo, default: 17)
+    {:ok, 17}
+  """
+  @spec get_integer(atom, atom, default: term) :: term
+  def get_integer(app, key, default: default_value) do
+    case get_integer(app, key) do
+      {:ok, value} -> {:ok, value}
+      {:error, _}  -> {:ok, default_value}
+    end
+  end
+
+
+  @doc """
+  Fetches an integer or raises an exception
+
+    iex> Application.put_env(:my_app, :foo, 23)
+    iex> Config.get_integer!(:my_app, :foo)
+    23
+  """
+  @spec get_integer!(atom, atom) :: term
+  def get_integer!(app, key) do
+    case get_integer(app, key) do
+      {:ok, value} -> value
+      {:error, _}  ->
+        raise "Configuration for application #{app} for #{key} is missing or it is not an integer"
+    end
+  end
+
+  @doc """
+  Fetches an integer or returns the default value
+
+    iex> Application.put_env(:my_app, :foo, 23)
+    iex> Config.get_integer!(:my_app, :foo)
+    23
+  """
+  @spec get_integer!(atom, atom) :: term
+  def get_integer!(app, key, default: default_value) do
+    case get_integer(app, key) do
+      {:ok, value} -> value
+      {:error, _}  -> default_value
+    end
+  end
+
 end
