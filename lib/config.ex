@@ -1,2 +1,39 @@
 defmodule Config do
+  @moduledoc """
+  Module for fetching values from the application's config or from the
+  environment if {:system, "VAR"} is provided.
+  """
+
+  @doc """
+  Fetches value from application
+
+  ## Reads value from the application's config
+      iex> Application.put_env(:my_app, :foo, "bar")
+      iex> Config.get(:my_app, :foo)
+      {:ok, "bar"}
+
+  ## Reads value from the system's environment
+      iex> System.put_env("BAZ", "bar")
+      iex> Application.put_env(:my_app, :baz, {:system, "BAZ"})
+      iex> Config.get(:my_app, :baz)
+      {:ok, "bar"}
+
+  ## When the value is not present in tha application's configuration.
+      iex> Config.get(:my_app, :non_existing_foo)
+      {:error, nil}
+  """
+  @spec get(atom, atom) :: term
+  def get(app, key) when is_atom(app) and is_atom(key) do
+    case Application.get_env(app, key) do
+      {:system, env_var} ->
+        case System.get_env(env_var) do
+          nil -> {:error, nil}
+          val -> {:ok, val}
+        end
+      nil ->
+        {:error, nil}
+      val ->
+        {:ok, val}
+    end
+  end
 end
